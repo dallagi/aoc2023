@@ -5,7 +5,7 @@ const DIGITS: &[&'static str] = &[
     "seven", "eight", "nine",
 ];
 
-fn day1(input: &str) -> u32 {
+fn part1(input: &str) -> u32 {
     let lines = input.lines();
     let mut sum = 0;
     for line in lines {
@@ -20,7 +20,7 @@ fn day1(input: &str) -> u32 {
     sum
 }
 
-fn day2(input: &str) -> u32 {
+fn part2(input: &str) -> u32 {
     input.lines().into_iter().map(line_to_number).sum()
 }
 
@@ -73,8 +73,8 @@ fn parse_digit(digit: &str) -> u32 {
 fn main() {
     let input = fs::read_to_string("src/bin/input1.txt").unwrap();
 
-    println!("Answer to day1 part 1: {}", day1(&input));
-    println!("Answer to day1 part 2: {}", day2(&input));
+    println!("Answer to day1 part 1: {}", part1(&input));
+    println!("Answer to day1 part 2: {}", part2(&input));
 }
 
 #[cfg(test)]
@@ -82,17 +82,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_example_1() {
+    fn test_part_1() {
         let example_input = r#"1abc2
 pqr3stu8vwx
 a1b2c3d4e5f
 treb7uchet"#;
 
-        assert_eq!(142, day1(example_input));
+        assert_eq!(142, part1(example_input));
     }
 
     #[test]
-    fn test_example_2() {
+    fn test_part_2() {
         let example_input = r#"two1nine
 eightwothree
 abcone2threexyz
@@ -101,7 +101,7 @@ xtwone3four
 zoneight234
 7pqrstsixteen"#;
 
-        assert_eq!(281, day2(example_input));
+        assert_eq!(281, part2(example_input));
     }
 
     #[test]
