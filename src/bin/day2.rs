@@ -5,7 +5,13 @@ fn part1(input: &str) -> u32 {
 
     games
         .iter()
-        .filter(|game| game.is_possible(12, 13, 14))
+        .filter(|game| {
+            game.is_possible(Cubes {
+                red: 12,
+                green: 13,
+                blue: 14,
+            })
+        })
         .map(|game| game.id)
         .sum()
 }
@@ -53,10 +59,10 @@ impl Game {
         Game { id, cubes_revealed }
     }
 
-    pub fn is_possible(&self, red: u32, green: u32, blue: u32) -> bool {
+    pub fn is_possible(&self, cubes: Cubes) -> bool {
         self.cubes_revealed
             .iter()
-            .all(|cr| cr.red <= red && cr.green <= green && cr.blue <= blue)
+            .all(|cr| cr.red <= cubes.red && cr.green <= cubes.green && cr.blue <= cubes.blue)
     }
 
     pub fn min_set_of_cubes(&self) -> Cubes {
