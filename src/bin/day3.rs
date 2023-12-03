@@ -1,4 +1,5 @@
 use std::fs;
+use std::ops::RangeInclusive;
 
 fn part1(input: &str) -> u32 {
     EngineSchematic::parse(input)
@@ -36,21 +37,25 @@ impl EngineSchematic {
                 }
                 if c.is_digit(10) {
                     if let Some(last_num) = result.numbers.last_mut() {
-                        if x > 0 && last_num.coord_end == (x - 1, y) {
+                        // new digit for existing number
+                        if *last_num.coord_x.end() == x.saturating_sub(1) {
                             last_num.value = last_num.value * 10 + c.to_digit(10).unwrap();
-                            last_num.coord_end = (x, y);
+                            last_num.coord_x = *last_num.coord_x.start()..=x;
                             continue;
                         }
                     }
+                    // new number
                     result.numbers.push(Number {
                         value: c.to_digit(10).unwrap(),
-                        coord_start: (x, y),
-                        coord_end: (x, y),
+                        coord_x: (x..=x),
+                        coord_y: y,
                     })
                 } else {
+                    // new symbol
                     result.symbols.push(Symbol {
                         value: c,
-                        coord: (x, y),
+                        coord_x: x,
+                        coord_y: y,
                     })
                 }
             }
@@ -64,7 +69,7 @@ impl EngineSchematic {
             .filter(|number| {
                 self.symbols
                     .iter()
-                    .any(|symbol| number.is_close_to(&symbol))
+                    .any(|symbol| number.is_close_to(symbol.coord_x, symbol.coord_y))
             })
             .collect()
     }
@@ -73,12 +78,7 @@ impl EngineSchematic {
         self.symbols
             .iter()
             .filter(|symbol| symbol.value == '*')
-            .map(|symbol| {
-                self.numbers
-                    .iter()
-                    .filter(|number| number.is_close_to(symbol))
-                    .collect()
-            })
+            .map(|symbol| self.numbers_around_symbol_at(symbol.coord_x, symbol.coord_y))
             .filter_map(|numbers: Vec<&Number>| {
                 if numbers.len() >= 2 {
                     let gear_ratio = numbers
@@ -92,29 +92,39 @@ impl EngineSchematic {
             })
             .collect()
     }
+
+    fn numbers_around_symbol_at<'a>(&'a self, coord_x: usize, coord_y: usize) -> Vec<&'a Number> {
+        self.numbers
+            .iter()
+            .filter(|number| number.is_close_to(coord_x, coord_y))
+            .collect()
+    }
 }
 
 #[derive(Debug)]
 struct Number {
     value: u32,
-    coord_start: (usize, usize),
-    coord_end: (usize, usize),
+    coord_x: RangeInclusive<usize>,
+    coord_y: usize,
 }
 
 impl Number {
-    fn is_close_to(&self, symbol: &Symbol) -> bool {
-        let x_range = (self.coord_start.0.saturating_sub(1))..=(self.coord_end.0 + 1);
-        let y_range = (self.coord_start.1.saturating_sub(1))..=(self.coord_start.1 + 1);
+    fn is_close_to(&self, coord_x: usize, coord_y: usize) -> bool {
+        let x_range = (self.coord_x.start().saturating_sub(1))..=(self.coord_x.end() + 1);
+        let y_range = (self.coord_y.saturating_sub(1))..=(self.coord_y + 1);
 
-        x_range.contains(&symbol.coord.0) && y_range.contains(&symbol.coord.1)
+        x_range.contains(&coord_x) && y_range.contains(&coord_y)
     }
 }
 
 #[derive(Debug)]
 struct Symbol {
     value: char,
-    coord: (usize, usize),
+    coord_x: usize,
+    coord_y: usize,
 }
+
+impl Symbol {}
 
 #[cfg(test)]
 mod tests {
