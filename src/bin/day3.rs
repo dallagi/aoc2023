@@ -2,14 +2,14 @@ use std::fs;
 
 fn part1(input: &str) -> u32 {
     EngineSchematic::parse(input)
-        .valid_numbers()
+        .engine_parts()
         .iter()
         .map(|number| number.value)
         .sum()
 }
 
 fn part2(input: &str) -> u32 {
-    todo!()
+    EngineSchematic::parse(input).gears().iter().sum()
 }
 
 fn main() {
@@ -58,15 +58,37 @@ impl EngineSchematic {
         result
     }
 
-    fn valid_numbers(&self) -> Vec<&Number> {
+    fn engine_parts(&self) -> Vec<&Number> {
         self.numbers
             .iter()
             .filter(|number| {
-                let x_range = (number.coord_start.0.saturating_sub(1))..=(number.coord_end.0 + 1);
-                let y_range = (number.coord_start.1.saturating_sub(1))..=(number.coord_start.1 + 1);
-                self.symbols.iter().any(|symbol| {
-                    x_range.contains(&symbol.coord.0) && y_range.contains(&symbol.coord.1)
-                })
+                self.symbols
+                    .iter()
+                    .any(|symbol| number.is_close_to(&symbol))
+            })
+            .collect()
+    }
+
+    fn gears(&self) -> Vec<u32> {
+        self.symbols
+            .iter()
+            .filter(|symbol| symbol.value == '*')
+            .map(|symbol| {
+                self.numbers
+                    .iter()
+                    .filter(|number| number.is_close_to(symbol))
+                    .collect()
+            })
+            .filter_map(|numbers: Vec<&Number>| {
+                if numbers.len() >= 2 {
+                    let gear_ratio = numbers
+                        .iter()
+                        .map(|number| number.value)
+                        .reduce(|a, b| a * b);
+                    Some(gear_ratio.unwrap())
+                } else {
+                    None
+                }
             })
             .collect()
     }
@@ -77,6 +99,15 @@ struct Number {
     value: u32,
     coord_start: (usize, usize),
     coord_end: (usize, usize),
+}
+
+impl Number {
+    fn is_close_to(&self, symbol: &Symbol) -> bool {
+        let x_range = (self.coord_start.0.saturating_sub(1))..=(self.coord_end.0 + 1);
+        let y_range = (self.coord_start.1.saturating_sub(1))..=(self.coord_start.1 + 1);
+
+        x_range.contains(&symbol.coord.0) && y_range.contains(&symbol.coord.1)
+    }
 }
 
 #[derive(Debug)]
@@ -106,10 +137,20 @@ mod tests {
         assert_eq!(4361, part1(example_input));
     }
 
-    // #[test]
-    // fn test_part_2() {
-    //     let example_input = r#""#;
+    #[test]
+    fn test_part_2() {
+        let example_input = r#"467..114..
+...*......
+..35..633.
+......#...
+617*......
+.....+.58.
+..592.....
+......755.
+...$.*....
+.664.598..
+"#;
 
-    //     assert_eq!(281, part2(example_input));
-    // }
+        assert_eq!(467835, part2(example_input));
+    }
 }
