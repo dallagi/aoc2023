@@ -1,5 +1,5 @@
 use std::fs;
-use std::ops::RangeInclusive;
+use std::ops::{Mul, RangeInclusive};
 
 fn part1(input: &str) -> u32 {
     EngineSchematic::parse(input)
@@ -81,10 +81,7 @@ impl EngineSchematic {
             .map(|symbol| self.numbers_around_symbol_at(symbol.coord_x, symbol.coord_y))
             .filter_map(|numbers: Vec<&Number>| {
                 if numbers.len() >= 2 {
-                    let gear_ratio = numbers
-                        .iter()
-                        .map(|number| number.value)
-                        .reduce(|a, b| a * b);
+                    let gear_ratio = numbers.iter().map(|number| number.value).reduce(Mul::mul);
                     Some(gear_ratio.unwrap())
                 } else {
                     None
