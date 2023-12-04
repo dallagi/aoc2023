@@ -6,8 +6,8 @@ fn part1(input: &str) -> u32 {
         .cards
         .iter()
         .map(Card::winning_numbers_count)
-        .filter(|count| *count != 0)
-        .map(|count| 2_usize.pow(count as u32 - 1) as u32)
+        .filter(|count| *count > 0)
+        .map(|count| 2_u32.pow(count as u32 - 1))
         .sum()
 }
 
@@ -109,7 +109,8 @@ mod tests {
             Card {
                 id: 1,
                 winning: HashSet::from_iter(vec![41, 48, 83, 86, 17]),
-                numbers: HashSet::from_iter(vec![83, 86, 6, 31, 17, 9, 48, 53])
+                numbers: HashSet::from_iter(vec![83, 86, 6, 31, 17, 9, 48, 53]),
+                winning_numbers_count: 4
             },
             Card::parse(card_input)
         );
