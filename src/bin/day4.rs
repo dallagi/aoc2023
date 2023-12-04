@@ -5,9 +5,9 @@ fn part1(input: &str) -> u32 {
     Cards::parse(input)
         .cards
         .iter()
-        .map(Card::winning_numbers)
-        .filter(|nums| !nums.is_empty())
-        .map(|nums| 2_u32.pow((nums.len() - 1) as u32))
+        .map(Card::winning_numbers_count)
+        .filter(|count| *count != 0)
+        .map(|count| 2_usize.pow(count as u32 - 1) as u32)
         .sum()
 }
 
@@ -38,7 +38,7 @@ impl Cards {
         let mut res = 0;
         for i in from_index..=to_index {
             let card = self.cards.get(i).unwrap();
-            let cards_won_count = card.winning_numbers().len();
+            let cards_won_count = card.winning_numbers_count();
             res += self.sum_of_winning_card_instances(i + 1, i + cards_won_count);
         }
         1 + res
@@ -50,9 +50,20 @@ struct Card {
     id: u32,
     winning: HashSet<u32>,
     numbers: HashSet<u32>,
+    winning_numbers_count: usize,
 }
 
 impl Card {
+    fn new(id: u32, winning: HashSet<u32>, numbers: HashSet<u32>) -> Self {
+        let winning_numbers_count = winning.intersection(&numbers).count();
+        Self {
+            id,
+            winning,
+            numbers,
+            winning_numbers_count,
+        }
+    }
+
     fn parse(input: &str) -> Self {
         let mut parts = input.splitn(3, [':', '|']);
         let id = parts
@@ -78,18 +89,11 @@ impl Card {
             .map(|n| n.parse().unwrap())
             .collect();
 
-        Self {
-            id,
-            winning,
-            numbers,
-        }
+        Self::new(id, winning, numbers)
     }
 
-    fn winning_numbers(&self) -> HashSet<u32> {
-        self.winning
-            .intersection(&self.numbers)
-            .map(|n| *n)
-            .collect()
+    fn winning_numbers_count(&self) -> usize {
+        self.winning_numbers_count
     }
 }
 
