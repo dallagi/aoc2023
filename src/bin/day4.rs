@@ -2,7 +2,8 @@ use std::collections::HashSet;
 use std::fs;
 
 fn part1(input: &str) -> u32 {
-    Card::parse_many(input)
+    Cards::parse(input)
+        .cards
         .iter()
         .map(Card::winning_numbers)
         .filter(|nums| !nums.is_empty())
@@ -21,6 +22,18 @@ fn main() {
     println!("Answer to day4 part 2: {}", part2(&input));
 }
 
+struct Cards {
+    pub cards: Vec<Card>,
+}
+
+impl Cards {
+    fn parse(input: &str) -> Self {
+        Self {
+            cards: input.lines().map(Card::parse).collect(),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 struct Card {
     id: u32,
@@ -29,10 +42,6 @@ struct Card {
 }
 
 impl Card {
-    fn parse_many(input: &str) -> Vec<Self> {
-        input.lines().map(Self::parse).collect()
-    }
-
     fn parse(input: &str) -> Self {
         let mut parts = input.splitn(3, [':', '|']);
         let id = parts
