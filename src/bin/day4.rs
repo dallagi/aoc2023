@@ -12,7 +12,8 @@ fn part1(input: &str) -> u32 {
 }
 
 fn part2(input: &str) -> u32 {
-    todo!()
+    let cards = Cards::parse(input);
+    cards.sum_of_winning_card_instances(0, cards.cards.len() - 1) - 1
 }
 
 fn main() {
@@ -31,6 +32,16 @@ impl Cards {
         Self {
             cards: input.lines().map(Card::parse).collect(),
         }
+    }
+
+    fn sum_of_winning_card_instances(&self, from_index: usize, to_index: usize) -> u32 {
+        let mut res = 0;
+        for i in from_index..=to_index {
+            let card = self.cards.get(i).unwrap();
+            let cards_won_count = card.winning_numbers().len();
+            res += self.sum_of_winning_card_instances(i + 1, i + cards_won_count);
+        }
+        1 + res
     }
 }
 
@@ -112,10 +123,15 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"#;
         assert_eq!(13, part1(example_input));
     }
 
-    // #[test]
-    // fn test_part_2() {
-    //     let example_input = r#""#;
+    #[test]
+    fn test_part_2() {
+        let example_input = r#"Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
+Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19
+Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1
+Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83
+Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
+Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"#;
 
-    //     assert_eq!(281, part2(example_input));
-    // }
+        assert_eq!(30, part2(example_input));
+    }
 }
