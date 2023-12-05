@@ -1,12 +1,12 @@
 use std::fs;
-use std::str::Lines;
+use std::ops::Range;
 
 fn part1(input: &str) -> u64 {
     Almanac::parse(input).lowest_location()
 }
 
 fn part2(input: &str) -> u64 {
-    todo!()
+    Almanac::parse(input).lowest_location_for_seed_ranges()
 }
 
 fn main() {
@@ -19,6 +19,7 @@ fn main() {
 #[derive(Debug)]
 struct Almanac {
     seeds: Vec<u64>,
+    seeds_ranges: Vec<Range<u64>>,
     maps: Vec<AlmanacMap>,
 }
 
@@ -27,28 +28,49 @@ impl Almanac {
         let mut blocks = input.split("\n\n");
 
         let seeds_line = blocks.next().unwrap();
-        let seeds = seeds_line
-            .strip_prefix("seeds: ")
-            .unwrap()
-            .split(' ')
-            .map(|num| num.parse().unwrap())
+        let seeds_nums = seeds_line.strip_prefix("seeds: ").unwrap().split(' ');
+
+        let seeds: Vec<u64> = seeds_nums.map(|num| num.parse().unwrap()).collect();
+        let seeds_ranges: Vec<_> = seeds
+            .chunks(2)
+            .map(|chunk| chunk[0]..(chunk[0] + chunk[1]))
             .collect();
 
         let maps = blocks.map(AlmanacMap::parse).collect();
 
-        Self { seeds, maps }
+        Self {
+            seeds,
+            maps,
+            seeds_ranges,
+        }
     }
 
     fn lowest_location(&self) -> u64 {
         self.seeds
             .iter()
-            .map(|seed| {
-                self.maps
-                    .iter()
-                    .fold(*seed, |acc, almanac_map| almanac_map.map(acc))
+            .map(|seed| self.seed_location(*seed))
+            .min()
+            .unwrap()
+    }
+
+    fn lowest_location_for_seed_ranges(&self) -> u64 {
+        self.seeds_ranges
+            .iter()
+            .map(|seeds_range| {
+                seeds_range
+                    .clone()
+                    .map(|seed| self.seed_location(seed))
+                    .min()
+                    .unwrap()
             })
             .min()
             .unwrap()
+    }
+
+    fn seed_location(&self, seed: u64) -> u64 {
+        self.maps
+            .iter()
+            .fold(seed, |acc, almanac_map| almanac_map.map(acc))
     }
 }
 
@@ -192,10 +214,43 @@ humidity-to-location map:
         assert_eq!(35, part1(example_input));
     }
 
-    // #[test]
-    // fn test_part_2() {
-    //     let example_input = r#""#;
+    #[test]
+    fn test_part_2() {
+        let example_input = r#"seeds: 79 14 55 13
 
-    //     assert_eq!(281, part2(example_input));
-    // }
+seed-to-soil map:
+50 98 2
+52 50 48
+
+soil-to-fertilizer map:
+0 15 37
+37 52 2
+39 0 15
+
+fertilizer-to-water map:
+49 53 8
+0 11 42
+42 0 7
+57 7 4
+
+water-to-light map:
+88 18 7
+18 25 70
+
+light-to-temperature map:
+45 77 23
+81 45 19
+68 64 13
+
+temperature-to-humidity map:
+0 69 1
+1 0 69
+
+humidity-to-location map:
+60 56 37
+56 93 4
+"#;
+
+        assert_eq!(46, part2(example_input));
+    }
 }
