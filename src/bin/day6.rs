@@ -1,23 +1,23 @@
 use std::fs;
 
-fn part1(input: &str) -> u32 {
+fn part1(input: &str) -> u64 {
     Games::parse(input).combinations()
 }
 
-fn part2(input: &str) -> u32 {
-    todo!()
+fn part2(input: &str) -> u64 {
+    Games::parse(input).join_numbers().combinations()
 }
 
 #[derive(Debug)]
 struct Games {
-    times: Vec<u32>,
-    distances: Vec<u32>,
+    times: Vec<u64>,
+    distances: Vec<u64>,
 }
 
 impl Games {
     fn parse(input: &str) -> Self {
         let mut lines = input.lines();
-        let times: Vec<u32> = lines
+        let times: Vec<u64> = lines
             .next()
             .unwrap()
             .strip_prefix("Time:")
@@ -26,7 +26,7 @@ impl Games {
             .filter(|s| !s.is_empty())
             .map(|num| num.trim().parse().unwrap())
             .collect();
-        let distances: Vec<u32> = lines
+        let distances: Vec<u64> = lines
             .next()
             .unwrap()
             .strip_prefix("Distance:")
@@ -39,7 +39,28 @@ impl Games {
         Games { times, distances }
     }
 
-    fn combinations(&self) -> u32 {
+    fn join_numbers(&mut self) -> Self {
+        Self {
+            times: vec![self
+                .times
+                .iter()
+                .map(|n| n.to_string())
+                .collect::<Vec<String>>()
+                .join("")
+                .parse()
+                .unwrap()],
+            distances: vec![self
+                .distances
+                .iter()
+                .map(|n| n.to_string())
+                .collect::<Vec<String>>()
+                .join("")
+                .parse()
+                .unwrap()],
+        }
+    }
+
+    fn combinations(&self) -> u64 {
         self.times
             .iter()
             .zip(self.distances.iter())
@@ -50,7 +71,7 @@ impl Games {
             .unwrap()
     }
 
-    fn min_press_time(record: u32, race_duration: u32) -> u32 {
+    fn min_press_time(record: u64, race_duration: u64) -> u64 {
         let mut from_time = 0;
         let mut to_time = race_duration;
 
@@ -79,7 +100,7 @@ impl Games {
         }
     }
 
-    fn max_press_time(record: u32, race_duration: u32) -> u32 {
+    fn max_press_time(record: u64, race_duration: u64) -> u64 {
         let mut from_time = 0;
         let mut to_time = race_duration;
 
@@ -108,7 +129,7 @@ impl Games {
         }
     }
 
-    fn distance(press_time: u32, race_duration: u32) -> u32 {
+    fn distance(press_time: u64, race_duration: u64) -> u64 {
         press_time * (race_duration - press_time)
     }
 }
