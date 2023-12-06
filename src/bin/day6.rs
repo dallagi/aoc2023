@@ -39,24 +39,20 @@ impl Games {
         Games { times, distances }
     }
 
-    fn join_numbers(&mut self) -> Self {
+    fn join_numbers(&self) -> Self {
+        let join_numbers_f = |nums: &Vec<u64>| {
+            vec![nums
+                .iter()
+                .map(|n| n.to_string())
+                .collect::<Vec<String>>()
+                .join("")
+                .parse()
+                .unwrap()]
+        };
+
         Self {
-            times: vec![self
-                .times
-                .iter()
-                .map(|n| n.to_string())
-                .collect::<Vec<String>>()
-                .join("")
-                .parse()
-                .unwrap()],
-            distances: vec![self
-                .distances
-                .iter()
-                .map(|n| n.to_string())
-                .collect::<Vec<String>>()
-                .join("")
-                .parse()
-                .unwrap()],
+            times: join_numbers_f(&self.times),
+            distances: join_numbers_f(&self.distances),
         }
     }
 
