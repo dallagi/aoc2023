@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 
 fn part1(input: &str) -> u64 {
@@ -7,7 +7,7 @@ fn part1(input: &str) -> u64 {
 }
 
 fn part2(input: &str) -> u64 {
-    todo!()
+    CamelCardsGame::parse(input).total_winnings()
 }
 
 fn main() {
@@ -65,9 +65,21 @@ impl Hand {
 
     fn cards_count(cards: &[Card]) -> HashMap<Card, u64> {
         let mut res = HashMap::new();
+        let mut jokers_count = 0;
         for card in cards {
-            *res.entry(*card).or_default() += 1
+            if *card == Card::joker() {
+                jokers_count += 1;
+            } else {
+                *res.entry(*card).or_default() += 1
+            }
         }
+        let joker = Card::joker();
+        let most_common_card = res
+            .iter()
+            .max_by_key(|(_k, v)| **v)
+            .unwrap_or((&joker, &5))
+            .0;
+        *res.entry(*most_common_card).or_default() += jokers_count;
         res
     }
 
@@ -132,21 +144,26 @@ struct Card {
 impl Card {
     fn strength(&self) -> u64 {
         match self.card {
-            'A' => 12,
-            'K' => 11,
-            'Q' => 10,
-            'J' => 9,
-            'T' => 8,
-            '9' => 7,
-            '8' => 6,
-            '7' => 5,
-            '6' => 4,
-            '5' => 3,
-            '4' => 2,
-            '3' => 1,
-            '2' => 0,
+            'A' => 13,
+            'K' => 12,
+            'Q' => 11,
+            // 'J' => 10,
+            'T' => 9,
+            '9' => 8,
+            '8' => 7,
+            '7' => 6,
+            '6' => 5,
+            '5' => 4,
+            '4' => 3,
+            '3' => 2,
+            '2' => 1,
+            'J' => 0,
             _ => panic!(),
         }
+    }
+
+    fn joker() -> Self {
+        Card { card: 'J' }
     }
 }
 
@@ -190,8 +207,13 @@ QQQJA 483
 
     #[test]
     fn test_part_2() {
-        let example_input = r#""#;
+        let example_input = r#"32T3K 765
+T55J5 684
+KK677 28
+KTJJT 220
+QQQJA 483
+"#;
 
-        assert_eq!(281, part2(example_input));
+        assert_eq!(5905, part2(example_input));
     }
 }
