@@ -87,46 +87,30 @@ impl Hand {
         let mut cards_counts: Vec<u64> = self.cards_count.values().map(|c| *c).collect();
         cards_counts.sort();
 
-        if cards_counts == &[5] {
-            return 6; // five of a kind
+        match cards_counts.as_slice() {
+            &[5] => 6,          // five of a kind
+            &[1, 4] => 5,       // four of a kind
+            &[2, 3] => 4,       // full house
+            &[1, 1, 3] => 3,    // three of a kind
+            &[1, 2, 2] => 2,    // two pair
+            &[1, 1, 1, 2] => 1, // one pair
+            _ => 0,             // high card
         }
-        if cards_counts == &[1, 4] {
-            return 5; // four of a kind
-        }
-        if cards_counts == &[2, 3] {
-            return 4; // full house
-        }
-        if cards_counts == &[1, 1, 3] {
-            return 3; // three of a kind
-        }
-        if cards_counts == &[1, 2, 2] {
-            return 2; // two pair
-        }
-        if cards_counts == &[1, 1, 1, 2] {
-            return 1; // one pair
-        }
-
-        0 // high card
     }
 }
 
 impl Ord for Hand {
     fn cmp(&self, other: &Self) -> Ordering {
-        match self.type_strength().cmp(&other.type_strength()) {
-            Ordering::Less => Ordering::Less,
-            Ordering::Greater => Ordering::Greater,
-            Ordering::Equal => {
-                for (card, other_card) in self.cards.iter().zip(other.cards.iter()) {
-                    match card.strength().cmp(&other_card.strength()) {
-                        Ordering::Less => return Ordering::Less,
-                        Ordering::Equal => continue,
-                        Ordering::Greater => return Ordering::Greater,
-                    }
-                }
+        if self.type_strength() != other.type_strength() {
+            return self.type_strength().cmp(&other.type_strength());
+        }
 
-                Ordering::Equal
+        for (card, other_card) in self.cards.iter().zip(other.cards.iter()) {
+            if card.strength() != other_card.strength() {
+                return card.strength().cmp(&other_card.strength());
             }
         }
+        Ordering::Equal
     }
 }
 
@@ -144,21 +128,13 @@ struct Card {
 impl Card {
     fn strength(&self) -> u64 {
         match self.card {
-            'A' => 13,
-            'K' => 12,
-            'Q' => 11,
+            'A' => 14,
+            'K' => 13,
+            'Q' => 12,
             // 'J' => 10,
-            'T' => 9,
-            '9' => 8,
-            '8' => 7,
-            '7' => 6,
-            '6' => 5,
-            '5' => 4,
-            '4' => 3,
-            '3' => 2,
-            '2' => 1,
+            'T' => 10,
             'J' => 0,
-            _ => panic!(),
+            c => c.to_digit(10).unwrap() as u64,
         }
     }
 
