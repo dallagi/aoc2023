@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 
 use regex::Regex;
@@ -91,7 +91,22 @@ impl Map {
         steps
     }
 
-    fn encounters_finishing_location_at(&self, starting_location: &str) -> u64 {
+    fn required_steps_for_ghosts(&self) -> u64 {
+        let start_locations: Vec<&str> = self
+            .nodes
+            .iter()
+            .map(|(id, _)| id.as_str())
+            .filter(|id| id.ends_with("A"))
+            .collect();
+        let distances_to_finish: Vec<u64> = start_locations
+            .iter()
+            .map(|loc| self.first_finishing_distance_from(loc))
+            .collect();
+
+        lcm(&distances_to_finish)
+    }
+
+    fn first_finishing_distance_from(&self, starting_location: &str) -> u64 {
         let mut current_location = starting_location;
         let mut instructions = self.instructions.iter().cycle().enumerate();
 
@@ -103,21 +118,6 @@ impl Map {
                 return idx as u64 + 1;
             }
         }
-    }
-
-    fn required_steps_for_ghosts(&self) -> u64 {
-        let start_locations: Vec<&str> = self
-            .nodes
-            .iter()
-            .map(|(id, _)| id.as_str())
-            .filter(|id| id.ends_with("A"))
-            .collect();
-        let distances_to_finish: Vec<u64> = start_locations
-            .iter()
-            .map(|loc| self.encounters_finishing_location_at(loc))
-            .collect();
-
-        lcm(&distances_to_finish)
     }
 }
 
@@ -184,13 +184,4 @@ XXX = (XXX, XXX)
 
         assert_eq!(6, part2(example_input));
     }
-
-    // #[test]
-    // fn xxx() {
-    //     let input = fs::read_to_string("src/bin/input8.txt").unwrap();
-    //     let map = Map::parse(&input);
-
-    //     map.encounters_finishing_locations_at("MSA");
-    //     panic!()
-    // }
 }
