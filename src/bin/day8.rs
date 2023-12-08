@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 
 use regex::Regex;
@@ -91,31 +91,49 @@ impl Map {
         steps
     }
 
+    fn encounters_finishing_location_at(&self, starting_location: &str) -> u64 {
+        let mut current_location = starting_location;
+        let mut instructions = self.instructions.iter().cycle().enumerate();
+
+        loop {
+            let (idx, instruction) = instructions.next().unwrap();
+            current_location = self.next_location(current_location, instruction);
+
+            if current_location.ends_with("Z") {
+                return idx as u64 + 1;
+            }
+        }
+    }
+
     fn required_steps_for_ghosts(&self) -> u64 {
-        let mut current_locations: Vec<&str> = self
+        let start_locations: Vec<&str> = self
             .nodes
             .iter()
             .map(|(id, _)| id.as_str())
             .filter(|id| id.ends_with("A"))
             .collect();
+        let distances_to_finish: Vec<u64> = start_locations
+            .iter()
+            .map(|loc| self.encounters_finishing_location_at(loc))
+            .collect();
 
-        let mut instructions = self.instructions.iter().cycle();
-        let mut steps = 0;
-
-        loop {
-            let finished = current_locations.iter().all(|loc| loc.ends_with("Z"));
-            if finished {
-                return steps;
-            }
-
-            steps += 1;
-            let instruction = instructions.next().unwrap();
-            current_locations = current_locations
-                .iter()
-                .map(|loc| self.next_location(loc, instruction))
-                .collect();
-        }
+        lcm(&distances_to_finish)
     }
+}
+
+fn gcd(mut a: u64, mut b: u64) -> u64 {
+    while b != 0 {
+        let t = b;
+        b = a % b;
+        a = t;
+    }
+    a
+}
+
+fn lcm(numbers: &[u64]) -> u64 {
+    numbers
+        .iter()
+        .fold(1, |lcm, &num| lcm / gcd(lcm, num) * num)
 }
 
 #[cfg(test)]
@@ -166,4 +184,13 @@ XXX = (XXX, XXX)
 
         assert_eq!(6, part2(example_input));
     }
+
+    // #[test]
+    // fn xxx() {
+    //     let input = fs::read_to_string("src/bin/input8.txt").unwrap();
+    //     let map = Map::parse(&input);
+
+    //     map.encounters_finishing_locations_at("MSA");
+    //     panic!()
+    // }
 }
