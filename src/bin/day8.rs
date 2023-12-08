@@ -71,6 +71,14 @@ impl Map {
         }
     }
 
+    fn next_location(&self, current_location: &str, instruction: &Direction) -> &str {
+        let (left, right) = self.nodes.get(current_location).unwrap();
+        match instruction {
+            Direction::Left => left,
+            Direction::Right => right,
+        }
+    }
+
     fn required_steps(&self, from: &str, destination: &str) -> u64 {
         let mut instructions = self.instructions.iter().cycle();
         let mut current_location = from;
@@ -78,12 +86,7 @@ impl Map {
 
         while current_location != destination {
             steps += 1;
-
-            let (left, right) = self.nodes.get(current_location).unwrap();
-            current_location = match instructions.next().unwrap() {
-                Direction::Left => left,
-                Direction::Right => right,
-            };
+            current_location = self.next_location(current_location, instructions.next().unwrap())
         }
 
         steps
