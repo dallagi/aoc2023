@@ -7,8 +7,8 @@ fn part1(input: &str) -> u64 {
     Map::parse(input).required_steps("AAA", "ZZZ")
 }
 
-fn part2(input: &str) -> u32 {
-    todo!()
+fn part2(input: &str) -> u64 {
+    Map::parse(input).required_steps_for_ghosts()
 }
 
 fn main() {
@@ -50,8 +50,7 @@ impl Map {
             .collect();
 
         lines.next();
-        let node_regex =
-            Regex::new(r"(?P<id>[A-Z]{3}) = \((?P<left>[A-Z]{3}), (?P<right>[A-Z]{3})\)").unwrap();
+        let node_regex = Regex::new(r"(?P<id>.{3}) = \((?P<left>.{3}), (?P<right>.{3})\)").unwrap();
         let nodes = lines
             .map(|line| {
                 let captures = node_regex.captures(line).unwrap();
@@ -91,6 +90,32 @@ impl Map {
 
         steps
     }
+
+    fn required_steps_for_ghosts(&self) -> u64 {
+        let mut current_locations: Vec<&str> = self
+            .nodes
+            .iter()
+            .map(|(id, _)| id.as_str())
+            .filter(|id| id.ends_with("A"))
+            .collect();
+
+        let mut instructions = self.instructions.iter().cycle();
+        let mut steps = 0;
+
+        loop {
+            let finished = current_locations.iter().all(|loc| loc.ends_with("Z"));
+            if finished {
+                return steps;
+            }
+
+            steps += 1;
+            let instruction = instructions.next().unwrap();
+            current_locations = current_locations
+                .iter()
+                .map(|loc| self.next_location(loc, instruction))
+                .collect();
+        }
+    }
 }
 
 #[cfg(test)]
@@ -127,8 +152,18 @@ ZZZ = (ZZZ, ZZZ)
 
     #[test]
     fn test_part_2() {
-        let example_input = r#""#;
+        let example_input = r#"LR
 
-        assert_eq!(281, part2(example_input));
+11A = (11B, XXX)
+11B = (XXX, 11Z)
+11Z = (11B, XXX)
+22A = (22B, XXX)
+22B = (22C, 22C)
+22C = (22Z, 22Z)
+22Z = (22B, 22B)
+XXX = (XXX, XXX)
+"#;
+
+        assert_eq!(6, part2(example_input));
     }
 }
