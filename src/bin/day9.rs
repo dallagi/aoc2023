@@ -5,7 +5,10 @@ fn part1(input: &str) -> i64 {
 }
 
 fn part2(input: &str) -> i64 {
-    todo!()
+    parse_input(input)
+        .iter()
+        .map(Sequence::predict_previous)
+        .sum()
 }
 
 fn main() {
@@ -26,6 +29,14 @@ impl Sequence {
         let mut last_prediction = 0;
         for diffs_seq in self.differences().iter().rev() {
             last_prediction += diffs_seq.last().unwrap()
+        }
+        last_prediction
+    }
+
+    fn predict_previous(&self) -> i64 {
+        let mut last_prediction = 0;
+        for diffs_seq in self.differences().iter().rev() {
+            last_prediction = diffs_seq.first().unwrap() - last_prediction
         }
         last_prediction
     }
@@ -72,8 +83,11 @@ mod tests {
 
     #[test]
     fn test_part_2() {
-        let example_input = r#""#;
+        let example_input = r#"0 3 6 9 12 15
+1 3 6 10 15 21
+10 13 16 21 30 45
+"#;
 
-        assert_eq!(281, part2(example_input));
+        assert_eq!(2, part2(example_input));
     }
 }
