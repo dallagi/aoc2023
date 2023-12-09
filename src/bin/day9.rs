@@ -26,19 +26,19 @@ impl Sequence {
     }
 
     fn predict_next(&self) -> i64 {
-        let mut last_prediction = 0;
-        for diffs_seq in self.differences().iter().rev() {
-            last_prediction += diffs_seq.last().unwrap()
-        }
-        last_prediction
+        self.differences()
+            .iter()
+            .rfold(0, |last_prediction, diffs_sequence| {
+                last_prediction + diffs_sequence.last().unwrap()
+            })
     }
 
     fn predict_previous(&self) -> i64 {
-        let mut last_prediction = 0;
-        for diffs_seq in self.differences().iter().rev() {
-            last_prediction = diffs_seq.first().unwrap() - last_prediction
-        }
-        last_prediction
+        self.differences()
+            .iter()
+            .rfold(0, |last_prediction, diffs_sequence| {
+                diffs_sequence.first().unwrap() - last_prediction
+            })
     }
 
     fn differences(&self) -> Vec<Vec<i64>> {
