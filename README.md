@@ -3,11 +3,11 @@ Template for daily solution:
 ```rust
 use std::fs;
 
-fn part1(input: &str) -> u32 {
+fn part1(input: &str) -> u64 {
     todo!()
 }
 
-fn part2(input: &str) -> u32 {
+fn part2(input: &str) -> u64 {
     todo!()
 }
 
