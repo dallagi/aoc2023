@@ -85,9 +85,9 @@ impl PipesGraph {
         self.find_loop().len() as u64 / 2
     }
 
-    fn find_loop(&self) -> HashMap<Point, u64> {
-        let mut visited = HashMap::new();
-        visited.insert(self.start, 0);
+    fn find_loop(&self) -> HashSet<Point> {
+        let mut visited = HashSet::new();
+        visited.insert(self.start);
 
         self.adj_list
             .get(&self.start)
@@ -105,12 +105,12 @@ impl PipesGraph {
         current_location: Point,
         previous_location: Point,
         steps: u64,
-        mut visited: HashMap<Point, u64>,
-    ) -> HashMap<Point, u64> {
-        if visited.contains_key(&current_location) {
+        mut visited: HashSet<Point>,
+    ) -> HashSet<Point> {
+        if visited.contains(&current_location) {
             return visited;
         }
-        visited.insert(current_location, steps);
+        visited.insert(current_location);
 
         let maybe_next_location = self
             .adj_list
@@ -122,9 +122,7 @@ impl PipesGraph {
         if let Some(next_location) = maybe_next_location {
             self.find_loop_dfs(*next_location, current_location, steps + 1, visited)
         } else {
-            println!("not a loop!");
-            dbg!(current_location);
-            HashMap::new()
+            HashSet::new()
         }
     }
 }
