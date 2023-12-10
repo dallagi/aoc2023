@@ -47,18 +47,30 @@ impl Point {
 struct PipesGraph {
     adj_list: HashMap<Point, Vec<Point>>,
     start: Point,
+    letters: HashMap<Point, char>,
+    max_x: u64,
+    max_y: u64,
 }
 
 impl PipesGraph {
     fn parse(input: &str) -> Self {
-        let mut adj_list = HashMap::new();
+        let mut adj_list: HashMap<Point, Vec<Point>> = HashMap::new();
         let mut start = Point::new(0, 0);
+        let mut letters = HashMap::new();
 
-        let chars: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
+        let chars: Vec<Vec<char>> = input
+            .lines()
+            .filter(|line| !line.is_empty())
+            .map(|line| line.chars().collect())
+            .collect();
+        let max_y = chars.len() as u64 - 1;
+        let max_x = chars.first().unwrap().len() as u64 - 1;
 
         for (y, line) in chars.iter().enumerate() {
             for (x, char) in line.iter().enumerate() {
                 let loc = Point::new(x as u64, y as u64);
+                letters.insert(loc, *char);
+
                 let adjacents = match char {
                     '.' => vec![],
                     '|' => vec![loc.north(), loc.south()],
@@ -69,7 +81,7 @@ impl PipesGraph {
                     'F' => vec![loc.south(), loc.east()],
                     'S' => {
                         start = loc;
-                        vec![loc.north(), loc.west(), loc.south(), loc.east()]
+                        vec![]
                     }
                     _ => panic!(),
                 };
@@ -78,7 +90,24 @@ impl PipesGraph {
             }
         }
 
-        Self { adj_list, start }
+        let mut start_neighbors = Vec::new();
+        for x in start.x.saturating_sub(1)..=(start.x + 1) {
+            for y in start.y.saturating_sub(1)..=(start.y + 1) {
+                let neighbor = Point::new(x, y);
+                if adj_list.get(&neighbor).unwrap().contains(&start) {
+                    start_neighbors.push(neighbor);
+                }
+            }
+        }
+        adj_list.insert(start, start_neighbors);
+
+        Self {
+            adj_list,
+            start,
+            letters,
+            max_x,
+            max_y,
+        }
     }
 
     fn max_distance_in_loop(&self) -> u64 {
@@ -126,86 +155,136 @@ impl PipesGraph {
         }
     }
 
+    fn print_subset(
+        &self,
+        loop_points: &HashSet<Point>,
+        points_to_highlight: &HashSet<Point>,
+        fancy: bool,
+    ) {
+        for y in 0..=self.max_y {
+            for x in 0..=self.max_x {
+                let loc = Point::new(x, y);
+                let letter = self.letters.get(&loc).unwrap().to_string();
+                let styled = match letter.as_str() {
+                    "L" => "└",
+                    "J" => "┘",
+                    "-" => "─",
+                    "|" => "│",
+                    "F" => "┌",
+                    "7" => "┐",
+
+                    other => other,
+                };
+
+                if points_to_highlight.contains(&loc) && loop_points.contains(&loc) {
+                    print!("?");
+                } else if points_to_highlight.contains(&loc) {
+                    print!("*");
+                } else if loop_points.contains(&loc) {
+                    if fancy {
+                        print!("{}", styled);
+                    } else {
+                        print!("{}", letter);
+                    }
+                } else {
+                    print!(".");
+                }
+            }
+            print!("\n");
+        }
+    }
+
     fn points_within_loop(&self) -> u64 {
         let loop_members = self.find_loop();
+        let mut sorted_loop_members: Vec<Point> = loop_members.iter().map(|x| x.clone()).collect();
+        sorted_loop_members.sort_by_key(|point| (point.x, point.y));
+
+        // self.print_subset(&loop_members, &HashSet::new(), false);
         let mut count = 0;
+        let mut points_inside = HashSet::new();
 
         for point in self.adj_list.keys() {
             if loop_members.contains(point) {
                 continue;
             }
 
-            let x_barriers_left_count = loop_members
+            let x_barriers_left: Vec<String> = sorted_loop_members
                 .iter()
-                .filter(|p| {
-                    point.x < p.x
-                        && p.y == point.y
-                        && (self
-                            .adj_list
-                            .get(p)
-                            .unwrap()
-                            .contains(&p.north().unwrap_or(Point::new(999999999, 999999999)))
-                            || self.adj_list.get(p).unwrap().contains(&p.south().unwrap()))
-                })
-                .count();
-            let x_barriers_right_count = loop_members
-                .iter()
-                .filter(|p| {
-                    point.x > p.x
-                        && p.y == point.y
-                        && (self
-                            .adj_list
-                            .get(p)
-                            .unwrap()
-                            .contains(&p.north().unwrap_or(Point::new(999999999, 999999999)))
-                            || self.adj_list.get(p).unwrap().contains(&p.south().unwrap()))
-                })
-                .count();
-            let y_barriers_top_count = loop_members
-                .iter()
-                .filter(|p| {
-                    point.y > p.y
-                        && p.x == point.x
-                        && (self.adj_list.get(p).unwrap().contains(&p.east().unwrap())
-                            || self.adj_list.get(p).unwrap().contains(&p.west().unwrap()))
-                })
-                .count();
-            let y_barriers_bottom_count = loop_members
-                .iter()
-                .filter(|p| {
-                    point.y < p.y
-                        && p.x == point.x
-                        && (self.adj_list.get(p).unwrap().contains(&p.east().unwrap())
-                            || self.adj_list.get(p).unwrap().contains(&p.west().unwrap()))
-                })
-                .count();
+                .filter(|p| point.x < p.x)
+                .filter(|p| point.y == p.y)
+                .map(|p| *self.letters.get(p).unwrap())
+                .filter(|c| *&['|', 'S', '7', 'F', 'J', 'L'].contains(c))
+                .map(|c| c.to_string())
+                .collect();
 
-            // if !((x_barriers_left_count % 2 == 0)
-            //     && (x_barriers_right_count % 2 == 0)
-            //     && (y_barriers_bottom_count % 2 == 0)
-            //     && (y_barriers_top_count % 2 == 0))
-            let is_inside = (((x_barriers_left_count as i64 - x_barriers_right_count as i64) % 2
-                != 0)
-                || ((y_barriers_top_count as i64 - y_barriers_bottom_count as i64) % 2 != 0));
+            let x_barriers_left = x_barriers_left
+                .join("")
+                .replace("FJ", "|")
+                .replace("L7", "|");
 
-            if is_inside {
-                count += 1;
+            let x_barriers_right: Vec<String> = sorted_loop_members
+                .iter()
+                .filter(|p| point.x < p.x)
+                .filter(|p| point.y == p.y)
+                .map(|p| *self.letters.get(p).unwrap())
+                .filter(|c| *&['|', 'S', '7', 'F', 'J', 'L'].contains(c))
+                .map(|c| c.to_string())
+                .collect();
+
+            let x_barriers_right = x_barriers_right
+                .join("")
+                .replace("FJ", "|")
+                .replace("L7", "|");
+
+            let y_barriers_top: Vec<String> = sorted_loop_members
+                .iter()
+                .filter(|p| point.y > p.y)
+                .filter(|p| point.x == p.x)
+                .map(|p| *self.letters.get(p).unwrap())
+                .filter(|c| *&['-', 'S', '7', 'F', 'J', 'L'].contains(c))
+                .map(|c| c.to_string())
+                .collect();
+
+            let y_barriers_top = y_barriers_top
+                .join("")
+                .replace("7L", "-")
+                .replace("FJ", "-");
+
+            let y_barriers_bottom: Vec<String> = sorted_loop_members
+                .iter()
+                .filter(|p| point.y < p.y)
+                .filter(|p| point.x == p.x)
+                .map(|p| *self.letters.get(p).unwrap())
+                .filter(|c| *&['-', 'S', '7', 'F', 'J', 'L'].contains(c))
+                .map(|c| c.to_string())
+                .collect();
+
+            let y_barriers_bottom = y_barriers_bottom
+                .join("")
+                .replace("7L", "-")
+                .replace("FJ", "-");
+
+            // on border
+            if (x_barriers_left.is_empty())
+                || (x_barriers_right.is_empty())
+                || (y_barriers_bottom.is_empty())
+                || (y_barriers_top.is_empty())
+            {
                 continue;
             }
 
-            // if (x_barriers_left_count % 2 != 0 || x_barriers_right_count % 2 != 0)
-            //     && x_barriers_left_count != x_barriers_right_count
-            // {
-            //     count += 1;
-            //     continue;
-            // }
-            // if (y_barriers_top_count % 2 != 0 || y_barriers_bottom_count % 2 != 0)
-            //     && y_barriers_top_count != y_barriers_bottom_count
-            // {
-            //     count += 1;
-            //     continue;
-            // }
+            let is_inside = !((x_barriers_left.len() % 2 == 0)
+                && (x_barriers_right.len() % 2 == 0)
+                && (y_barriers_bottom.len() % 2 == 0)
+                && (y_barriers_top.len() % 2 == 0));
+
+            if is_inside {
+                points_inside.insert(*point);
+                count += 1;
+                continue;
+            }
         }
+        // self.print_subset(&loop_members, &points_inside, true);
         return count;
     }
 }
@@ -294,7 +373,7 @@ L--J.L7...LJS7F-7L7.
     }
 
     #[test]
-    fn test_part_2_comples() {
+    fn test_part_2_complex() {
         let example_input = r#"FF7FSF7F7F7F7F7F---7
 L|LJ||||||||||||F--J
 FL-7LJLJ||||||LJL-77
