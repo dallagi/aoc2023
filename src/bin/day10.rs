@@ -6,7 +6,7 @@ fn part1(input: &str) -> u64 {
 }
 
 fn part2(input: &str) -> u64 {
-    todo!()
+    PipesGraph::parse(input).points_within_loop()
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -125,6 +125,89 @@ impl PipesGraph {
             HashSet::new()
         }
     }
+
+    fn points_within_loop(&self) -> u64 {
+        let loop_members = self.find_loop();
+        let mut count = 0;
+
+        for point in self.adj_list.keys() {
+            if loop_members.contains(point) {
+                continue;
+            }
+
+            let x_barriers_left_count = loop_members
+                .iter()
+                .filter(|p| {
+                    point.x < p.x
+                        && p.y == point.y
+                        && (self
+                            .adj_list
+                            .get(p)
+                            .unwrap()
+                            .contains(&p.north().unwrap_or(Point::new(999999999, 999999999)))
+                            || self.adj_list.get(p).unwrap().contains(&p.south().unwrap()))
+                })
+                .count();
+            let x_barriers_right_count = loop_members
+                .iter()
+                .filter(|p| {
+                    point.x > p.x
+                        && p.y == point.y
+                        && (self
+                            .adj_list
+                            .get(p)
+                            .unwrap()
+                            .contains(&p.north().unwrap_or(Point::new(999999999, 999999999)))
+                            || self.adj_list.get(p).unwrap().contains(&p.south().unwrap()))
+                })
+                .count();
+            let y_barriers_top_count = loop_members
+                .iter()
+                .filter(|p| {
+                    point.y > p.y
+                        && p.x == point.x
+                        && (self.adj_list.get(p).unwrap().contains(&p.east().unwrap())
+                            || self.adj_list.get(p).unwrap().contains(&p.west().unwrap()))
+                })
+                .count();
+            let y_barriers_bottom_count = loop_members
+                .iter()
+                .filter(|p| {
+                    point.y < p.y
+                        && p.x == point.x
+                        && (self.adj_list.get(p).unwrap().contains(&p.east().unwrap())
+                            || self.adj_list.get(p).unwrap().contains(&p.west().unwrap()))
+                })
+                .count();
+
+            // if !((x_barriers_left_count % 2 == 0)
+            //     && (x_barriers_right_count % 2 == 0)
+            //     && (y_barriers_bottom_count % 2 == 0)
+            //     && (y_barriers_top_count % 2 == 0))
+            let is_inside = (((x_barriers_left_count as i64 - x_barriers_right_count as i64) % 2
+                != 0)
+                || ((y_barriers_top_count as i64 - y_barriers_bottom_count as i64) % 2 != 0));
+
+            if is_inside {
+                count += 1;
+                continue;
+            }
+
+            // if (x_barriers_left_count % 2 != 0 || x_barriers_right_count % 2 != 0)
+            //     && x_barriers_left_count != x_barriers_right_count
+            // {
+            //     count += 1;
+            //     continue;
+            // }
+            // if (y_barriers_top_count % 2 != 0 || y_barriers_bottom_count % 2 != 0)
+            //     && y_barriers_top_count != y_barriers_bottom_count
+            // {
+            //     count += 1;
+            //     continue;
+            // }
+        }
+        return count;
+    }
 }
 
 fn main() {
@@ -162,9 +245,68 @@ LJ..."#;
     }
 
     #[test]
-    fn test_part_2() {
-        let example_input = r#""#;
+    fn test_part_2_simple_1() {
+        let example_input = r#"...........
+.S-------7.
+.|F-----7|.
+.||.....||.
+.||.....||.
+.|L-7.F-J|.
+.|..|.|..|.
+.L--J.L--J.
+...........
+"#;
 
-        assert_eq!(281, part2(example_input));
+        assert_eq!(4, part2(example_input));
+    }
+
+    #[test]
+    fn test_part_2_simple_2() {
+        let example_input = r#"..........
+.S------7.
+.|F----7|.
+.||....||.
+.||....||.
+.|L-7F-J|.
+.|..||..|.
+.L--JL--J.
+..........
+"#;
+
+        assert_eq!(4, part2(example_input));
+    }
+
+    #[test]
+    fn test_part_2_standard() {
+        let example_input = r#".F----7F7F7F7F-7....
+.|F--7||||||||FJ....
+.||.FJ||||||||L7....
+FJL7L7LJLJ||LJ.L-7..
+L--J.L7...LJS7F-7L7.
+....F-J..F7FJ|L7L7L7
+....L7.F7||L7|.L7L7|
+.....|FJLJ|FJ|F7|.LJ
+....FJL-7.||.||||...
+....L---J.LJ.LJLJ...
+"#;
+
+        assert_eq!(8, part2(example_input));
+    }
+
+    #[test]
+    fn test_part_2_comples() {
+        let example_input = r#"FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L
+"#;
+
+        assert_eq!(10, part2(example_input));
     }
 }
